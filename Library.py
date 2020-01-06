@@ -12,6 +12,18 @@ def create():
     u.execute('CREATE TABLE IF NOT EXISTS Users(Name TEXT, Key BLOB, Uid BLOB)')
 
 
+def display():
+    b.execute('SELECT * FROM Books')
+    print(b.fetchall())
+
+
+def check(id, key):
+    u.execute('SELECT * FROM Users WHERE Uid=? AND Key=?', (id, key))
+    if u.fetchone() is not None:
+        return True
+    return False
+
+
 create()
 
 
@@ -52,38 +64,22 @@ class Library:
         self.head = None
         self.user = None
 
-    def register(self, user):
+    def register(self, users):
         if self.user is None:
-            self.user = user
+            self.user = users
         else:
             prev = self.user
             while True:
                 if prev.next is None:
                     break
                 prev = prev.next
-                prev.next = user
+                prev.next = users
 
     def login(self, uid, key):
-        if uid == self.user.uid:
-            if key == self.user.key:
-                return
-            else:
-                print("Wrong Password")
-                return False
-        else:
-            prev = self.user
-            while True:
-                if prev.next is None:
-                    print("NO USER")
-                    return False
-                else:
-                    if uid == prev.next.log.uid:
-                        if key == prev.next.key:
-                            return
-                        else:
-                            print("Wrong Password")
-                            return False
-                    prev = prev.next
+        if check(uid, key):
+            return
+        print("wrong entry")
+        return False
 
     def insert(self, book):
         if self.head is None:
@@ -96,23 +92,23 @@ class Library:
                 prev = prev.next
             prev.next = book
 
-    def issue(self, name, id):
+    def issue(self, name, uid):
         if self.head is None:
             print("NO BOOKS")
             return
         t = self.head
-        u = self.user
+        us = self.user
         while True:
             if name == t.title:
                 while True:
-                    if id == u.uid:
-                        u.books.append(name)
+                    if us.uid == uid:
+                        us.books.append(name)
                         print("ISSUED")
                         return
-                    elif u.next is None:
+                    elif us.next is None:
                         print("ID INVALID")
                         return
-                    u = u.next
+                    us = us.next
             elif t.next is None:
                 print("NO BOOKS")
                 return
@@ -121,7 +117,7 @@ class Library:
     def rturn(self):
         pass
 
-    def displayUser(self, id):
+    def displayUser(self, uid):
         if self.user is None:
             print("Empty!")
             return
@@ -129,15 +125,16 @@ class Library:
         while True:
             if c is None:
                 break
-            if id == c.uid:
+            if uid == c.uid:
                 b = c.books
-                print("Name:"+c.name, "UID:"+c.uid)
+                print("Name:" + c.name, "UID:" + c.uid)
                 print("Books:", end=" ")
-                for a in(b):
-                    print(a,"|", end=" ")
+                for a in (b):
+                    print(a, "|", end=" ")
             c = c.next
 
     def displayBook(self):
+        # b.execute("SELECT Title, Author, Year FROM Books")
         if self.head is None:
             print("Empty!")
             return
@@ -164,11 +161,12 @@ if __name__ == '__main__':
         print("|  n - new user")
         print("|  l - login")
         print("|-----------------------|")
-        u = input("|  Enter:")
-        if u == "n":
+        ch = input("|  Enter:")
+        if ch == "n":
             new()
-        if u == "l":
+        if ch == "l":
             login()
+
 
     def login():
         print("|----------Login---------|")
@@ -178,13 +176,15 @@ if __name__ == '__main__':
             login()
         return
 
+
     def new():
         print("|-------REGISTER--------|")
         a = input("|  name:")
-        b = input("|  uid:")
+        uid = input("|  uid:")
         c = input("|  key:")
-        lib.register(User(a, b, c))
+        lib.register(User(a, uid, c))
         login()
+
 
     def book_menu():
         print("|========LIBRARY========|")
@@ -193,11 +193,12 @@ if __name__ == '__main__':
         print("|  3 - issue")
         print("|  0 - exit")
         a = int(input("|  Enter:"))
-        #print("|=======================|")
+        # print("|=======================|")
         if a == 1:
             print("|----------------BOOKS----------------|")
-            #print("|----------------------------------|n")
-            lib.displayBook()
+            # print("|----------------------------------|n")
+            # lib.displayBook()
+            display()
         if a == 2:
             d = input("title:")
             b = input("author:")
@@ -214,6 +215,7 @@ if __name__ == '__main__':
             print("")
         if a == 0:
             exit()
+
 
     log_menu()
     while True:
