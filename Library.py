@@ -1,27 +1,40 @@
 import sqlite3
 
-books = sqlite3.connect('books.db')
-user = sqlite3.connect('users.db')
-
-b = books.cursor()
-u = user.cursor()
+li = sqlite3.connect('Library.db')
+l = li.cursor()
 
 
 def create():
-    b.execute('CREATE TABLE IF NOT EXISTS Books(Title TEXT, Author TEXT, Year INTEGER)')
-    u.execute('CREATE TABLE IF NOT EXISTS Users(Name TEXT, Key BLOB, Uid BLOB)')
+    l.execute('CREATE TABLE IF NOT EXISTS Books(Title TEXT, Author TEXT, Year INTEGER, Uid BLOB)')
+    l.execute('CREATE TABLE IF NOT EXISTS Users(Name TEXT, Key BLOB, Uid BLOB)')
 
 
 def display():
-    b.execute('SELECT * FROM Books')
-    print(b.fetchall())
+    l.execute('SELECT * FROM Books')
+    print(l.fetchall())
 
 
-def check(id, key):
-    u.execute('SELECT * FROM Users WHERE Uid=? AND Key=?', (id, key))
-    if u.fetchone() is not None:
+def check_user(id, key):
+    l.execute('SELECT * FROM Users WHERE Uid=? AND Key=?', (id, key))
+    if l.fetchone() is not None:
         return True
     return False
+
+
+def check_book(title, uid):
+    l.execute('SELECT Title FROM Books WHERE Title=?', (title,))
+    a = l.fetchone()
+    l.execute('SELECT Uid FROM Users WHERE Uid=?', (uid,))
+    b = l.fetchone()
+    if a is not None:
+        if b is not None:
+            print(a)
+            l.execute('INSERT INTO Books(Uid) VALUES(?)', uid)
+            li.commit()
+        else:
+            print("No user")
+    else:
+        print("no books")
 
 
 create()
@@ -34,8 +47,8 @@ class Book:
         self.author = author
         self.year = year
         self.next = None
-        b.execute("INSERT INTO Books(Title, Author, Year) VALUES(?, ?, ?)", (title, author, year))
-        books.commit()
+        l.execute("INSERT INTO Books(Title, Author, Year) VALUES(?, ?, ?)", (title, author, year))
+        li.commit()
 
 
 class User:
@@ -46,8 +59,8 @@ class User:
         self.uid = uid
         self.books = []
         self.next = None
-        u.execute("INSERT INTO Users(Name, Key, Uid) VALUES(?, ?, ?)", (name, key, uid))
-        user.commit()
+        l.execute("INSERT INTO Users(Name, Key, Uid) VALUES(?, ?, ?)", (name, key, uid))
+        li.commit()
 
 
 # class Admin:
@@ -76,7 +89,7 @@ class Library:
                 prev.next = users
 
     def login(self, uid, key):
-        if check(uid, key):
+        if check_user(uid, key):
             return
         print("wrong entry")
         return False
@@ -93,26 +106,7 @@ class Library:
             prev.next = book
 
     def issue(self, name, uid):
-        if self.head is None:
-            print("NO BOOKS")
-            return
-        t = self.head
-        us = self.user
-        while True:
-            if name == t.title:
-                while True:
-                    if us.uid == uid:
-                        us.books.append(name)
-                        print("ISSUED")
-                        return
-                    elif us.next is None:
-                        print("ID INVALID")
-                        return
-                    us = us.next
-            elif t.next is None:
-                print("NO BOOKS")
-                return
-            t = t.next
+        check_book(name, uid)
 
     def rturn(self):
         pass
@@ -129,22 +123,22 @@ class Library:
                 b = c.books
                 print("Name:" + c.name, "UID:" + c.uid)
                 print("Books:", end=" ")
-                for a in (b):
+                for a in b:
                     print(a, "|", end=" ")
             c = c.next
 
-    def displayBook(self):
-        # b.execute("SELECT Title, Author, Year FROM Books")
-        if self.head is None:
-            print("Empty!")
-            return
-        c = self.head
-        while True:
-            if c is None:
-                break
-            print("|  {} | {} | {}".format(c.title, c.author, c.year))
-            print("|-------------------------------------|")
-            c = c.next
+    # def displayBook(self):
+    #     # b.execute("SELECT Title, Author, Year FROM Books")
+    #     if self.head is None:
+    #         print("Empty!")
+    #         return
+    #     c = self.head
+    #     while True:
+    #         if c is None:
+    #             break
+    #         print("|  {} | {} | {}".format(c.title, c.author, c.year))
+    #         print("|-------------------------------------|")
+    #         c = c.next
 
 
 if __name__ == '__main__':
@@ -155,6 +149,7 @@ if __name__ == '__main__':
     # y = ["2001", "2012", "2015", "1995", "1999"]
     # for n in range(len(t)):
     #     lib.insert(Book(t[n], a[n], y[n]))
+
 
     def log_menu():
         print("|========LIBRARY========|")
@@ -167,15 +162,13 @@ if __name__ == '__main__':
         if ch == "l":
             login()
 
-
     def login():
-        print("|----------Login---------|")
+        print("|---------Login---------|")
         uid = input("|  uid:")
         key = input("|  key:")
         if lib.login(uid, key) is False:
             login()
         return
-
 
     def new():
         print("|-------REGISTER--------|")
@@ -185,7 +178,6 @@ if __name__ == '__main__':
         lib.register(User(a, uid, c))
         login()
 
-
     def book_menu():
         print("|========LIBRARY========|")
         print("|  1 - display books")
@@ -193,11 +185,8 @@ if __name__ == '__main__':
         print("|  3 - issue")
         print("|  0 - exit")
         a = int(input("|  Enter:"))
-        # print("|=======================|")
         if a == 1:
             print("|----------------BOOKS----------------|")
-            # print("|----------------------------------|n")
-            # lib.displayBook()
             display()
         if a == 2:
             d = input("title:")
@@ -205,17 +194,16 @@ if __name__ == '__main__':
             c = int(input("year:"))
             lib.insert(Book(d, b, c))
             print("|============BOOKS============|")
-            lib.displayBook()
+            display()
             print("|=========================|")
         if a == 3:
             n = input("Enter title:")
             u = input("UID:")
             lib.issue(n, u)
-            lib.displayUser(u)
+            # lib.displayUser(u)
             print("")
         if a == 0:
             exit()
-
 
     log_menu()
     while True:
