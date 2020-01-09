@@ -1,43 +1,4 @@
-import sqlite3
-
-li = sqlite3.connect('Library.db')
-l = li.cursor()
-
-
-def create():
-    l.execute('CREATE TABLE IF NOT EXISTS Books(Title TEXT, Author TEXT, Year INTEGER, Uid BLOB)')
-    l.execute('CREATE TABLE IF NOT EXISTS Users(Name TEXT, Key BLOB, Uid BLOB)')
-
-
-def display():
-    l.execute('SELECT * FROM Books')
-    print(l.fetchall())
-
-
-def check_user(id, key):
-    l.execute('SELECT * FROM Users WHERE Uid=? AND Key=?', (id, key))
-    if l.fetchone() is not None:
-        return True
-    return False
-
-
-def check_book(title, uid):
-    l.execute('SELECT Title FROM Books WHERE Title=?', (title,))
-    a = l.fetchone()
-    l.execute('SELECT Uid FROM Users WHERE Uid=?', (uid,))
-    b = l.fetchone()
-    if a is not None:
-        if b is not None:
-            print(a)
-            l.execute('INSERT INTO Books(Uid) VALUES(?)', uid)
-            li.commit()
-        else:
-            print("No user")
-    else:
-        print("no books")
-
-
-create()
+from database import*
 
 
 class Book:
@@ -61,15 +22,6 @@ class User:
         self.next = None
         l.execute("INSERT INTO Users(Name, Key, Uid) VALUES(?, ?, ?)", (name, key, uid))
         li.commit()
-
-
-# class Admin:
-#     def __init__(self):
-#         pass
-#
-#     def userDetails(self):
-#         pass
-#
 
 
 class Library:
@@ -106,50 +58,19 @@ class Library:
             prev.next = book
 
     def issue(self, name, uid):
-        check_book(name, uid)
-
-    def rturn(self):
-        pass
-
-    def displayUser(self, uid):
-        if self.user is None:
-            print("Empty!")
-            return
-        c = self.user
-        while True:
-            if c is None:
-                break
-            if uid == c.uid:
-                b = c.books
-                print("Name:" + c.name, "UID:" + c.uid)
-                print("Books:", end=" ")
-                for a in b:
-                    print(a, "|", end=" ")
-            c = c.next
-
-    # def displayBook(self):
-    #     # b.execute("SELECT Title, Author, Year FROM Books")
-    #     if self.head is None:
-    #         print("Empty!")
-    #         return
-    #     c = self.head
-    #     while True:
-    #         if c is None:
-    #             break
-    #         print("|  {} | {} | {}".format(c.title, c.author, c.year))
-    #         print("|-------------------------------------|")
-    #         c = c.next
+        issue(uid, name)
+        l.execute('SELECT * FROM Issue WHERE Uid=?', uid,)
+        print(l.fetchall())
 
 
 if __name__ == '__main__':
-
+    create()
     lib = Library()
     # t = ["ALCHEMIST", "5 AM", "RICH DAD POOR DAD", "THINK", "UNKNOWN"]
     # a = ["ROBIN", "ROBIN SHARMA", "ROBERT", "NAPOLIAN", "ANNONYMOUS"]
     # y = ["2001", "2012", "2015", "1995", "1999"]
     # for n in range(len(t)):
     #     lib.insert(Book(t[n], a[n], y[n]))
-
 
     def log_menu():
         print("|========LIBRARY========|")
@@ -159,8 +80,11 @@ if __name__ == '__main__':
         ch = input("|  Enter:")
         if ch == "n":
             new()
-        if ch == "l":
+        elif ch == "l":
             login()
+        else:
+            print("ENTER VALID INPUT")
+            log_menu()
 
     def login():
         print("|---------Login---------|")
@@ -183,27 +107,36 @@ if __name__ == '__main__':
         print("|  1 - display books")
         print("|  2 - add books")
         print("|  3 - issue")
+        print("|  4 - return")
         print("|  0 - exit")
-        a = int(input("|  Enter:"))
-        if a == 1:
+        a = input("|  Enter:")
+        if a == "1":
             print("|----------------BOOKS----------------|")
-            display()
-        if a == 2:
+            l.execute('SELECT * FROM Books')
+            print(l.fetchall())
+        if a == "2":
             d = input("title:")
             b = input("author:")
             c = int(input("year:"))
             lib.insert(Book(d, b, c))
             print("|============BOOKS============|")
-            display()
             print("|=========================|")
-        if a == 3:
+        if a == "3":
             n = input("Enter title:")
             u = input("UID:")
             lib.issue(n, u)
-            # lib.displayUser(u)
             print("")
-        if a == 0:
+        if a == "4":
+            n = input("Enter title:")
+            u = input("UID:")
+            retrn(u, n)
+            l.execute('SELECT * FROM Issue WHERE Uid=?', u)
+            print(l.fetchall())
+        if a == "0":
             exit()
+        else:
+            print("ENTER VALID INPUT")
+            book_menu()
 
     log_menu()
     while True:
